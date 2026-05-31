@@ -1,0 +1,49 @@
+<% title = 'Status Permintaan Hapus' %>
+<%- include('partials/header') %>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h4><i class="fas fa-clock"></i> Status Permintaan Hapus Santri</h4>
+    </div>
+    <div class="card-body">
+        <% if (success) { %><div class="alert alert-success"><%= success %></div><% } %>
+        <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Santri</th>
+                        <th>Alasan</th>
+                        <th>Tanggal Request</th>
+                        <th>Status</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (requests && requests.length > 0) { %>
+                        <% requests.forEach(req => { 
+                            let badge = '';
+                            let ket = '';
+                            if (req.status === 'pending') { badge = 'warning'; ket = 'Menunggu persetujuan'; }
+                            else if (req.status === 'approved') { badge = 'success'; ket = 'Disetujui, akan dihapus dalam 24 jam'; }
+                            else if (req.status === 'rejected') { badge = 'danger'; ket = 'Ditolak'; }
+                            else { badge = 'secondary'; ket = 'Telah dihapus'; }
+                        %>
+                        <tr>
+                            <td><%= req.santri_nama %></td>
+                            <td><%= req.reason %></td>
+                            <td><%= new Date(req.created_at).toLocaleString('id-ID') %></td>
+                            <td><span class="badge bg-<%= badge %>"><%= req.status %></span></td>
+                            <td><%= ket %></td>
+                        </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr><td colspan="5" class="text-center">Belum ada permintaan hapus.</td></tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

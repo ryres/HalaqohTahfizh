@@ -1,0 +1,120 @@
+<% title = 'Laporan Tahfizh' %>
+<%- include('../partials/header') %>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">📅 Pencapaian per Hari (10 terakhir)</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    <% perHari.forEach(hari => { %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <%= new Date(hari.tanggal).toLocaleDateString('id-ID') %>
+                            <span class="badge bg-primary rounded-pill"><%= hari.total_setoran %> setoran</span>
+                        </li>
+                    <% }) %>
+                    <% if (perHari.length === 0) { %>
+                        <li class="list-group-item">Belum ada data</li>
+                    <% } %>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">📊 Statistik Baris (Top 10)</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    <% statsBaris.forEach(stat => { %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Baris ke-<%= stat.baris %>
+                            <span class="badge bg-success rounded-pill"><%= stat.total %></span>
+                        </li>
+                    <% }) %>
+                    <% if (statsBaris.length === 0) { %>
+                        <li class="list-group-item">Belum ada data</li>
+                    <% } %>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">📖 Statistik Ayat (Top 10)</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    <% statsAyat.forEach(stat => { %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Ayat ke-<%= stat.ayat %>
+                            <span class="badge bg-warning rounded-pill"><%= stat.total %></span>
+                        </li>
+                    <% }) %>
+                    <% if (statsAyat.length === 0) { %>
+                        <li class="list-group-item">Belum ada data</li>
+                    <% } %>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">📖 Statistik Surat (Top 10)</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    <% statsSurat.forEach(stat => { %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <%= stat.surat %>
+                            <span class="badge bg-info rounded-pill"><%= stat.total %></span>
+                        </li>
+                    <% }) %>
+                    <% if (statsSurat.length === 0) { %>
+                        <li class="list-group-item">Belum ada data</li>
+                    <% } %>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">🧑‍🏫 Laporan per Pembimbing</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead class="table-dark">
+                            <tr><th>Pembimbing</th><th>Total Santri</th></tr>
+                        </thead>
+                        <tbody>
+                            <% perPembimbing.forEach(p => { %>
+                                <tr>
+                                    <td><%= p.pembimbing || '-' %></td>
+                                    <td><%= p.total_santri %></td>
+                                </tr>
+                            <% }) %>
+                            <% if (perPembimbing.length === 0) { %>
+                                <tr><td colspan="2" class="text-center">Belum ada data</td></tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

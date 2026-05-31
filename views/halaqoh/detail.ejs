@@ -1,0 +1,40 @@
+<% title = `Detail Halaqoh: ${halaqoh.nama_halaqoh}` %>
+<%- include('../partials/header') %>
+
+<div class="card">
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+        <h4><i class="fas fa-info-circle"></i> <%= halaqoh.nama_halaqoh %></h4>
+        <a href="/halaqoh" class="btn btn-light btn-sm">Kembali</a>
+    </div>
+    <div class="card-body">
+        <p><strong>Pembimbing:</strong> <%= halaqoh.pembimbing || '-' %></p>
+        <p><strong>Jadwal:</strong> <%= halaqoh.jadwal || '-' %></p>
+        <p><strong>Ruangan:</strong> <%= halaqoh.ruangan || '-' %></p>
+        <hr>
+        <h5>Daftar Santri dalam Halaqoh ini</h5>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr><th>Nama</th><th>Kelas</th><th>Juz</th><th>Aksi</th></tr>
+                </thead>
+                <tbody>
+                    <% if (santri && santri.length) { %>
+                        <% santri.forEach(s => { %>
+                        <tr>
+                            <td><%= s.nama %></td>
+                            <td><%= s.kelas || '-' %></td>
+                            <td><%= s.juz %></td>
+                            <td><a href="/santri/edit/<%= s.id %>" class="btn btn-sm btn-warning">Edit Santri</a></td>
+                        </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <td><td colspan="4">Belum ada santri di halaqoh ini</td></tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+        <a href="/santri/add?halaqoh_id=<%= halaqoh.id %>" class="btn btn-primary">Tambah Santri di Halaqoh ini</a>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

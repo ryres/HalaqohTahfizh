@@ -1,0 +1,68 @@
+<% title = halaqoh ? 'Edit Halaqoh' : 'Tambah Halaqoh' %>
+<%- include('../partials/header') %>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4><%= title %></h4>
+            </div>
+            <div class="card-body">
+                <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+                <form method="POST" action="<%= action %>">
+                    <div class="mb-3">
+                        <label class="form-label">Nama Halaqoh</label>
+                        <input type="text" name="nama_halaqoh" class="form-control" value="<%= halaqoh ? halaqoh.nama_halaqoh : '' %>" required>
+                    </div>
+                    <div class="mb-3">
+    <label class="form-label">Pembimbing (Guru)</label>
+    <select name="guru_id" class="form-select">
+        <option value="">-- Pilih Guru --</option>
+        <% if (typeof guruList !== 'undefined' && guruList && guruList.length) { %>
+            <% guruList.forEach(g => { %>
+                <option value="<%= g.id %>" <%= (halaqoh && halaqoh.guru_id == g.id) ? 'selected' : '' %>>
+                    <%= g.nama %>
+                </option>
+            <% }) %>
+        <% } %>
+    </select>
+</div>
+                    <div class="mb-3">
+                        <label class="form-label">Ruangan</label>
+                        <input type="text" name="ruangan" class="form-control" value="<%= halaqoh ? halaqoh.ruangan : '' %>">
+                    </div>
+                    <!-- Jadwal: hari (daypicker) dan jam (clockpicker) -->
+                    <div class="mb-3">
+                        <label class="form-label">Hari</label>
+                        <select name="hari" class="form-select" required>
+                            <option value="">-- Pilih Hari --</option>
+                            <option value="Senin" <%= (halaqoh && halaqoh.hari === 'Senin') ? 'selected' : '' %>>Senin</option>
+                            <option value="Selasa" <%= (halaqoh && halaqoh.hari === 'Selasa') ? 'selected' : '' %>>Selasa</option>
+                            <option value="Rabu" <%= (halaqoh && halaqoh.hari === 'Rabu') ? 'selected' : '' %>>Rabu</option>
+                            <option value="Kamis" <%= (halaqoh && halaqoh.hari === 'Kamis') ? 'selected' : '' %>>Kamis</option>
+                            <option value="Jumat" <%= (halaqoh && halaqoh.hari === 'Jumat') ? 'selected' : '' %>>Jumat</option>
+                            <option value="Sabtu" <%= (halaqoh && halaqoh.hari === 'Sabtu') ? 'selected' : '' %>>Sabtu</option>
+                            <option value="Minggu" <%= (halaqoh && halaqoh.hari === 'Minggu') ? 'selected' : '' %>>Minggu</option>
+                        </select>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Jam Mulai</label>
+                            <input type="time" name="jam_mulai" class="form-control" value="<%= halaqoh ? halaqoh.jam_mulai : '' %>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Jam Selesai</label>
+                            <input type="time" name="jam_selesai" class="form-control" value="<%= halaqoh ? halaqoh.jam_selesai : '' %>" required>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="/halaqoh" class="btn btn-secondary">Batal</a>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,194 @@
+<% title = 'Dashboard' %>
+<%- include('partials/header') %>
+
+<!-- Kartu Statistik -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Total Santri</h5>
+                <h2 id="totalSantri">0</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Setoran Bulan Ini</h5>
+                <h2 id="setoranBulan">0</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">Rata-rata Juz</h5>
+                <h2 id="rataJuz">0</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title">Mumtaz (%)</h5>
+                <h2 id="persenMumtaz">0%</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bar Chart & Pie Chart -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">Distribusi Hafalan per Juz</div>
+            <div class="card-body">
+                <canvas id="juzChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">Status Halaqoh</div>
+            <div class="card-body">
+                <canvas id="statusChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Grafik Perbandingan Antar Halaqoh -->
+<div class="card mt-4">
+    <div class="card-header bg-info text-white">
+        <h4 class="mb-0"><i class="fas fa-chart-bar"></i> Perbandingan Antar Halaqoh</h4>
+    </div>
+    <div class="card-body">
+        <canvas id="halaqohChart" width="400" height="200"></canvas>
+    </div>
+</div>
+
+<!-- Top 5 Santri & Aktivitas Terbaru -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">Top 5 Santri (Nilai Terbaik)</div>
+            <div class="card-body">
+                <ul class="list-group" id="topSantriList"></ul>
+            </div>
+        </div>
+    </div>
+    <% if (user.role === 'admin') { %>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">Aktivitas Terbaru</div>
+            <div class="card-body">
+                <ul class="list-group" id="logsList"></ul>
+            </div>
+        </div>
+    </div>
+    <% } %>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    async function loadDashboard() {
+        const res = await fetch('/api/dashboard-summary');
+        const data = await res.json();
+        
+        // Update cards
+        document.getElementById('totalSantri').innerText = data.totalSantri;
+        document.getElementById('setoranBulan').innerText = data.setoranBulan;
+        document.getElementById('rataJuz').innerText = data.rataJuz;
+        document.getElementById('persenMumtaz').innerText = data.persenMumtaz + '%';
+        
+        // Bar chart juz
+        const juzLabels = data.distribusiJuz.map(d => `Juz ${d.juz}`);
+        const juzValues = data.distribusiJuz.map(d => d.total);
+        new Chart(document.getElementById('juzChart'), {
+            type: 'bar',
+            data: {
+                labels: juzLabels,
+                datasets: [{
+                    label: 'Jumlah Santri',
+                    data: juzValues,
+                    backgroundColor: 'rgba(54,162,235,0.5)',
+                    borderColor: 'rgba(54,162,235,1)',
+                    borderWidth: 1
+                }]
+            },
+            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        });
+        
+        // Pie chart status
+        new Chart(document.getElementById('statusChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Mumtaz', 'Regular', 'Bimbingan'],
+                datasets: [{
+                    data: [data.status.mumtaz, data.status.regular, data.status.bimbingan],
+                    backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+                }]
+            }
+        });
+
+        // Grafik perbandingan halaqoh
+async function loadHalaqohChart() {
+    const res = await fetch('/api/halaqoh-comparison');
+    const data = await res.json();
+    const labels = data.map(h => h.nama_halaqoh);
+    const jumlahSantri = data.map(h => h.jumlah_santri);
+    const avgTajwid = data.map(h => h.avg_tajwid || 0);
+    const avgKelancaran = data.map(h => h.avg_kelancaran || 0);
+    const avgMakhraj = data.map(h => h.avg_makhraj || 0);
+    
+    const ctx = document.getElementById('halaqohChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Jumlah Santri', data: jumlahSantri, backgroundColor: '#3498db', yAxisID: 'y' },
+                { label: 'Rata-rata Tajwid', data: avgTajwid, backgroundColor: '#e74c3c', yAxisID: 'y1' },
+                { label: 'Rata-rata Kelancaran', data: avgKelancaran, backgroundColor: '#2ecc71', yAxisID: 'y1' },
+                { label: 'Rata-rata Makhraj', data: avgMakhraj, backgroundColor: '#f39c12', yAxisID: 'y1' }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Jumlah Santri' } },
+                y1: { position: 'right', beginAtZero: true, max: 100, title: { display: true, text: 'Nilai (0-100)' } }
+            }
+        }
+    });
+}
+loadHalaqohChart();
+        
+        // Top 5 santri
+        const topList = document.getElementById('topSantriList');
+        topList.innerHTML = '';
+        data.topSantri.forEach(s => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+            li.innerHTML = `${s.nama} <span class="badge bg-primary rounded-pill">${parseFloat(s.nilai).toFixed(1)}</span>`;
+            topList.appendChild(li);
+        });
+        
+        // Log aktivitas (admin)
+        if (data.logs) {
+            const logsList = document.getElementById('logsList');
+            if (logsList) {
+                logsList.innerHTML = '';
+                data.logs.forEach(log => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item';
+                    li.innerHTML = `<strong>${log.username}</strong> - ${log.action} <br><small>${new Date(log.created_at).toLocaleString('id-ID')}</small>`;
+                    logsList.appendChild(li);
+                });
+            }
+        }
+    }
+    loadDashboard();
+</script>
+
+<%- include('partials/footer') %>

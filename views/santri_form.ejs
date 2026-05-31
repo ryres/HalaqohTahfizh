@@ -1,0 +1,166 @@
+<% title = santri ? 'Edit Santri' : 'Tambah Santri' %>
+<%- include('partials/header') %>
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="fas fa-user-graduate"></i> <%= title %></h4>
+            </div>
+            <div class="card-body">
+                <% if (error) { %>
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <%= error %>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <% } %>
+                
+                <form method="POST" action="<%= action %>">
+                    <!-- Baris 1: Tanggal Setor & Nama Santri (pakai mb-3) -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Tanggal Setor <span class="text-danger">*</span></label>
+                            <input type="date" name="setoran_tgl" class="form-control" value="<%= santri ? santri.setoran_tgl : '' %>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Nama Santri <span class="text-danger">*</span></label>
+                            <input type="text" name="nama" class="form-control" value="<%= santri ? santri.nama : '' %>" required>
+                        </div>
+                    </div>
+                    
+                    <!-- Baris 2: Kelas & Juz -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Kelas</label>
+                            <input type="text" name="kelas" class="form-control" value="<%= santri ? santri.kelas : '' %>" placeholder="Contoh: 3A">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Juz <span class="text-danger">*</span></label>
+                            <input type="number" name="juz" class="form-control" min="1" max="30" value="<%= santri ? santri.juz : '' %>" required>
+                        </div>
+                    </div>
+                    
+                    <!-- Baris 3: Surat (dropdown) & Ayat (dengan info maksimal) -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Surat <span class="text-danger">*</span></label>
+                            <select name="surat" id="suratSelect" class="form-select" required>
+                                <option value="">-- Pilih Surat --</option>
+                                <% if (typeof surahs !== 'undefined' && surahs && surahs.length) { %>
+                                    <% surahs.forEach(surah => { %>
+                                        <option value="<%= surah.name %>" data-verse="<%= surah.verseCount %>"
+                                            <%= (santri && santri.surat === surah.name) ? 'selected' : '' %>>
+                                            <%= surah.name %> (<%= surah.verseCount %> ayat)
+                                        </option>
+                                    <% }) %>
+                                <% } %>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Ayat <span class="text-danger">*</span></label>
+                            <input type="number" name="ayat" id="ayatInput" class="form-control" min="1" value="<%= santri ? santri.ayat : '' %>" required>
+                            <div id="verseInfo" class="form-text text-muted"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Baris 4: Baris & Halaqoh -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Baris <span class="text-danger">*</span></label>
+                            <input type="number" name="baris" class="form-control" min="1" value="<%= santri ? santri.baris : '' %>" required placeholder="Nomor baris">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Halaqoh</label>
+                            <select name="halaqoh_id" class="form-select">
+                                <option value="">-- Pilih Halaqoh --</option>
+                                <% if (typeof halaqohList !== 'undefined' && halaqohList && halaqohList.length) { %>
+                                    <% halaqohList.forEach(h => { %>
+                                        <option value="<%= h.id %>" <%= (santri && santri.halaqoh_id == h.id) ? 'selected' : '' %>>
+                                            <%= h.nama_halaqoh %>
+                                        </option>
+                                    <% }) %>
+                                <% } %>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Baris 5: Pembimbing (Guru) & Target Juz -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Pembimbing (Guru)</label>
+                            <select name="guru_id" class="form-select">
+                                <option value="">-- Pilih Guru --</option>
+                                <% if (typeof guruList !== 'undefined' && guruList && guruList.length) { %>
+                                    <% guruList.forEach(g => { %>
+                                        <option value="<%= g.id %>" <%= (santri && santri.guru_id == g.id) ? 'selected' : '' %>>
+                                            <%= g.nama %>
+                                        </option>
+                                    <% }) %>
+                                <% } %>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Target Juz</label>
+                            <input type="number" name="target_juz" class="form-control" min="1" max="30" value="<%= santri ? santri.target_juz : 30 %>">
+                            <small class="text-muted">Default 30</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Baris 6: Tajwid, Kelancaran, Makhraj (3 kolom) dengan margin bawah -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Tajwid (0-100)</label>
+                            <input type="number" name="tajwid" class="form-control" min="0" max="100" step="1" value="<%= santri ? santri.tajwid : 0 %>" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Kelancaran (0-100)</label>
+                            <input type="number" name="kelancaran" class="form-control" min="0" max="100" step="1" value="<%= santri ? santri.kelancaran : 0 %>" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Makhraj (0-100)</label>
+                            <input type="number" name="makhraj" class="form-control" min="0" max="100" step="1" value="<%= santri ? santri.makhraj : 0 %>" required>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="/dashboard/<%= user.role %>" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Kembali
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Simpan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Validasi ayat berdasarkan surat
+    const suratSelect = document.getElementById('suratSelect');
+    const ayatInput = document.getElementById('ayatInput');
+    const verseInfo = document.getElementById('verseInfo');
+    function updateAyatMax() {
+        const selectedOption = suratSelect.options[suratSelect.selectedIndex];
+        if (selectedOption && selectedOption.value) {
+            const maxAyat = selectedOption.getAttribute('data-verse');
+            if (maxAyat) {
+                ayatInput.max = maxAyat;
+                verseInfo.innerHTML = `Maksimal ayat untuk surat ini adalah ${maxAyat}.`;
+            } else {
+                ayatInput.removeAttribute('max');
+                verseInfo.innerHTML = '';
+            }
+        } else {
+            ayatInput.removeAttribute('max');
+            verseInfo.innerHTML = '';
+        }
+    }
+    if (suratSelect) {
+        updateAyatMax();
+        suratSelect.addEventListener('change', updateAyatMax);
+    }
+</script>
+
+<%- include('partials/footer') %>

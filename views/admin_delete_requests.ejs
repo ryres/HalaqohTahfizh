@@ -1,0 +1,43 @@
+<% title = 'Permintaan Hapus Santri' %>
+<%- include('partials/header') %>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h4><i class="fas fa-clipboard-list"></i> Permintaan Hapus Santri</h4>
+    </div>
+    <div class="card-body">
+        <% if (success) { %><div class="alert alert-success"><%= success %></div><% } %>
+        <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+        <% if (requests.length === 0) { %>
+            <div class="alert alert-info">Tidak ada permintaan pending.</div>
+        <% } else { %>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr><th>Santri</th><th>Diminta oleh</th><th>Alasan</th><th>Tanggal</th><th>Aksi</th></tr>
+                    </thead>
+                    <tbody>
+                        <% requests.forEach(req => { %>
+                        <tr>
+                            <td><%= req.santri_nama %></td>
+                            <td><%= req.requester_name %></td>
+                            <td><%= req.reason %></td>
+                            <td><%= new Date(req.created_at).toLocaleString('id-ID') %></td>
+                            <td>
+                                <form action="/admin/delete-requests/<%= req.id %>/approve" method="POST" style="display: inline-block;">
+                                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Setujui penghapusan? Data akan dihapus otomatis dalam 24 jam')">Setujui</button>
+                                </form>
+                                <form action="/admin/delete-requests/<%= req.id %>/reject" method="POST" style="display: inline-block;">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tolak permintaan?')">Tolak</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

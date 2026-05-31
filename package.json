@@ -1,0 +1,39 @@
+{
+  "name": "tahfizh",
+  "version": "1.0.0",
+  "description": "Belajar autentikasi dan CRUD dengan Express.js dan MySQL",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "compression": "^1.8.1",
+    "connect-redis": "^9.0.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.6.1",
+    "ejs": "^5.0.2",
+    "exceljs": "^4.4.0",
+    "express": "^4.22.2",
+    "express-session": "^1.19.0",
+    "he": "^1.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "mysql2": "^3.22.3",
+    "node-cache": "^5.1.2",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.8",
+    "pdfkit": "^0.18.0",
+    "redis": "^5.12.1",
+    "silhouette-coefficient": "^1.0.9",
+    "skmeans": "^0.11.3",
+    "xss": "^1.0.15"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

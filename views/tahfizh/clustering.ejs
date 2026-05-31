@@ -1,0 +1,238 @@
+<% title = 'Pembentukan Halaqoh' %>
+<%- include('../partials/header') %>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">⚙️ Parameter Clustering (Manhattan Distance)</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/tahfizh/clustering">
+                    <div class="mb-3">
+                        <label class="form-label">Jumlah Kluster (K)</label>
+                        <input type="number" name="k" class="form-control" min="2" max="10" value="<%= kValue %>" required>
+                        <small class="text-muted">Masukkan jumlah kelompok (2-10)</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Proses Clustering</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <% if (error) { %>
+            <div class="alert alert-danger"><%= error %></div>
+        <% } %>
+        <% if (result) { %>
+            <div class="card">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">📊 Hasil Clustering (K=<%= result.k %>) - Silhouette Score: <%= typeof result.silhouetteScore === 'number' ? result.silhouetteScore.toFixed(4) : result.silhouetteScore %></h5>
+                    <form method="POST" action="/tahfizh/download-clustering">
+                        <input type="hidden" name="k" value="<%= result.k %>">
+                        <button type="submit" class="btn btn-light btn-sm"><i class="fas fa-download"></i> Download Excel</button>
+                    </form>
+                </div>
+                <div class="card-body">
+                    <!-- Tabs -->
+                    <ul class="nav nav-tabs" id="clusterTab" role="tablist">
+                        <% result.clusters.forEach((cluster, idx) => { %>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link <%= idx === 0 ? 'active' : '' %>" id="cluster-<%= idx %>-tab" data-bs-toggle="tab" data-bs-target="#cluster-<%= idx %>" type="button" role="tab">
+                                    Halaqoh <%= idx+1 %> (<%= cluster.length %> santri)
+                                </button>
+                            </li>
+                        <% }) %>
+                    </ul>
+                    <div class="tab-content mt-3">
+                        <% result.clusters.forEach((cluster, idx) => { %>
+                            <div class="tab-pane fade <%= idx === 0 ? 'show active' : '' %>" id="cluster-<%= idx %>" role="tabpanel">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped table-bordered">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th style="white-space: nowrap;">Nama</th>
+                                                <th style="white-space: nowrap;">Kelas</th>
+                                                <th style="white-space: nowrap;">Juz</th>
+                                                <th style="white-space: nowrap;">Rata-rata Nilai</th>
+                                                <th style="white-space: nowrap;">Label</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% cluster.forEach(santri => { 
+                                                let nilai = santri.rata_rata_nilai;
+                                                if (typeof nilai === 'undefined' || nilai === null) nilai = 0;
+                                                const nilaiFormatted = parseFloat(nilai).toFixed(2);
+                                                let label = '';
+                                                if (nilai > 80) label = 'Mumtaz';
+                                                else if (nilai >= 60) label = 'Regular';
+                                                else label = 'Bimbingan';
+                                            %>
+                                            <tr>
+                                                <td style="white-space: nowrap;"><%= santri.nama %></td>
+                                                <td style="white-space: nowrap;"><%= santri.kelas || '-' %></td>
+                                                <td style="white-space: nowrap;"><%= santri.juz %></td>
+                                                <td style="white-space: nowrap;"><%= nilaiFormatted %></td>
+                                                <td style="white-space: nowrap;"><%= label %></td>
+                                            </tr>
+                                            <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+
+                    <!-- Diagram Batang -->
+                    <div class="mt-4">
+                        <h5 class="text-center">📊 Rata-rata Nilai per Halaqoh</h5>
+                        <canvas id="clusterChart" width="400" height="200" style="max-width:100%; height:auto;"></canvas>
+                        <p class="text-muted small text-center mt-2">
+                            Diagram ini menunjukkan rata-rata nilai (tajwid + kelancaran + makhraj) dari setiap halaqoh (cluster).<br>
+                            Semakin tinggi batang, semakin baik rata-rata kemampuan santri dalam halaqoh tersebut.
+                        </p>
+                    </div>
+
+                    <!-- Diagram Scatter (Centroid) -->
+                    <div class="mt-5">
+                        <h5 class="text-center">🗺️ Peta Sebaran Santri & Centroid</h5>
+                        <canvas id="centroidChart" width="400" height="200" style="max-width:100%; height:auto;"></canvas>
+                        <p class="text-muted small text-center mt-2">
+                            Sumbu X = Juz, Sumbu Y = Rata-rata Nilai.<br>
+                            Titik berwarna = santri per cluster. Bintang merah = centroid cluster.
+                        </p>
+                    </div>
+
+                    <p class="mt-3 text-muted">
+                        <strong>Manhattan Distance</strong> digunakan untuk menghitung jarak antar data.<br>
+                        <strong>Silhouette Score</strong>: mendekati 1 = kluster baik, 0 = overlapping, negatif = kurang tepat.
+                    </p>
+                </div>
+            </div>
+
+            <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+            <script>
+                (function() {
+                    // Data clusters dari server (diamankan dari XSS)
+                    const clusters = <%- JSON.stringify(result.clusters).replace(/<\//g, '<\\/') %>;
+                    
+                    // Diagram Batang
+                    const labelsBar = [];
+                    const avgScores = [];
+                    clusters.forEach((cluster, idx) => {
+                        let total = 0, count = 0;
+                        cluster.forEach(s => {
+                            if (s.rata_rata_nilai !== undefined && s.rata_rata_nilai !== null) {
+                                total += parseFloat(s.rata_rata_nilai);
+                                count++;
+                            }
+                        });
+                        const avg = count ? (total / count).toFixed(2) : 0;
+                        labelsBar.push(`Halaqoh ${idx+1}`);
+                        avgScores.push(avg);
+                    });
+                    const ctxBar = document.getElementById('clusterChart').getContext('2d');
+                    new Chart(ctxBar, {
+                        type: 'bar',
+                        data: {
+                            labels: labelsBar,
+                            datasets: [{
+                                label: 'Rata-rata Nilai (0-100)',
+                                data: avgScores,
+                                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            scales: { y: { beginAtZero: true, max: 100 } }
+                        }
+                    });
+
+                    // Diagram Scatter (Centroid)
+                    const pointsByCluster = [];
+                    const centroids = [];
+                    clusters.forEach((cluster, idx) => {
+                        const points = cluster.map(s => ({ x: s.juz, y: s.rata_rata_nilai }));
+                        pointsByCluster.push(points);
+                        let sumX = 0, sumY = 0;
+                        points.forEach(p => { sumX += p.x; sumY += p.y; });
+                        const centerX = points.length ? sumX / points.length : 0;
+                        const centerY = points.length ? sumY / points.length : 0;
+                        centroids.push({ x: centerX, y: centerY });
+                    });
+
+                    const colors = [
+                        'rgba(54, 162, 235, 0.7)', 'rgba(255, 99, 132, 0.7)', 'rgba(75, 192, 192, 0.7)',
+                        'rgba(255, 206, 86, 0.7)', 'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)',
+                        'rgba(199, 199, 199, 0.7)', 'rgba(83, 102, 255, 0.7)', 'rgba(255, 99, 255, 0.7)',
+                        'rgba(99, 255, 132, 0.7)'
+                    ];
+
+                    const datasets = [];
+                    for (let i = 0; i < pointsByCluster.length; i++) {
+                        if (pointsByCluster[i].length === 0) continue;
+                        datasets.push({
+                            label: `Halaqoh ${i+1}`,
+                            data: pointsByCluster[i],
+                            backgroundColor: colors[i % colors.length],
+                            borderColor: colors[i % colors.length],
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            type: 'scatter',
+                            showLine: false
+                        });
+                    }
+                    datasets.push({
+                        label: 'Centroid',
+                        data: centroids,
+                        type: 'scatter',
+                        pointStyle: 'star',
+                        pointRadius: 8,
+                        pointBackgroundColor: 'red',
+                        pointBorderColor: 'darkred',
+                        showLine: false
+                    });
+
+                    const ctxScatter = document.getElementById('centroidChart').getContext('2d');
+                    new Chart(ctxScatter, {
+                        type: 'scatter',
+                        data: { datasets: datasets },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            scales: {
+                                x: {
+                                    title: { display: true, text: 'Juz (1-30)' },
+                                    min: 0.5,
+                                    max: 30.5,
+                                    ticks: { stepSize: 1, callback: (val) => Math.floor(val) }
+                                },
+                                y: {
+                                    title: { display: true, text: 'Rata-rata Nilai (0-100)' },
+                                    min: 0,
+                                    max: 100,
+                                    ticks: { stepSize: 10 }
+                                }
+                            },
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: (ctx) => `(${ctx.parsed.x}, ${ctx.parsed.y.toFixed(2)})`
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })();
+            </script>
+        <% } else if (!error) { %>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Masukkan jumlah kluster (K) dan klik "Proses Clustering" untuk memulai.
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

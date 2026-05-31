@@ -1,0 +1,24 @@
+<% title = 'Register' %>
+<%- include('partials/header') %>
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header bg-success text-white"><h4><i class="fas fa-user-plus"></i> Registrasi</h4></div>
+            <div class="card-body">
+                <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+                <form method="POST" action="/register">
+                    <select name="role" class="form-control">
+    <option value="user">User Biasa</option>
+    <option value="admin">Admin</option>
+    <option value="guru_tahfizh">Guru Tahfizh</option>
+</select>
+                    <button type="submit" class="btn btn-success w-100">Daftar</button>
+                </form>
+                <hr><p class="text-center">Sudah punya akun? <a href="/login">Login</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

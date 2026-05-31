@@ -1,0 +1,217 @@
+<% title = 'Data Santri' %>
+<%- include('partials/header') %>
+
+<div class="card">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h4 class="mb-0"><i class="fas fa-users"></i> Data Santri</h4>
+        <a href="/data-santri/target-hafalan" class="btn btn-info btn-sm"><i class="fas fa-chart-line"></i> Target Hafalan</a>
+    </div>
+    <div class="card-body">
+        <% if (success) { %>
+            <div class="alert alert-success alert-dismissible fade show"><%= success %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+        <% } %>
+        <% if (error) { %>
+            <div class="alert alert-danger alert-dismissible fade show"><%= error %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+        <% } %>
+
+        <!-- Tombol Aksi -->
+        <div class="d-flex flex-wrap gap-2 mb-4">
+            <a href="/santri/add" class="btn btn-success"><i class="fas fa-plus"></i> Tambah Santri</a>
+            <a href="/santri/export" class="btn btn-info text-white"><i class="fas fa-file-excel"></i> Export Excel</a>
+            <form action="/santri/import" method="POST" enctype="multipart/form-data" class="d-inline">
+                <div class="input-group">
+                    <input type="file" name="file" class="form-control" accept=".xlsx, .xls" required>
+                    <button class="btn btn-warning" type="submit"><i class="fas fa-upload"></i> Import Excel</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Pencarian -->
+        <form method="GET" action="/data-santri" class="row g-3 mb-4">
+            <div class="col-md-8">
+                <input type="text" name="search" class="form-control" placeholder="Cari nama atau juz..." value="<%= search %>">
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Cari</button>
+                <% if (search) { %>
+                    <a href="/data-santri" class="btn btn-secondary">Reset</a>
+                <% } %>
+            </div>
+        </form>
+
+        <!-- Tabel dengan sorting -->
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th><a href="?sort=nama&order=<%= sortBy === 'nama' && order === 'asc' ? 'desc' : 'asc' %><%= search ? '&search='+search : '' %>" class="text-white text-decoration-none">Nama <i class="fas fa-sort"></i></a></th>
+                        <th>Kelas</th>
+                        <th><a href="?sort=juz&order=<%= sortBy === 'juz' && order === 'asc' ? 'desc' : 'asc' %><%= search ? '&search='+search : '' %>" class="text-white text-decoration-none">Juz <i class="fas fa-sort"></i></a></th>
+                        <th>Surat</th>
+                        <th>Ayat</th>
+                        <th>Baris</th>
+                        <th><a href="?sort=tajwid&order=<%= sortBy === 'tajwid' && order === 'asc' ? 'desc' : 'asc' %><%= search ? '&search='+search : '' %>" class="text-white text-decoration-none">Tajwid <i class="fas fa-sort"></i></a></th>
+                        <th><a href="?sort=kelancaran&order=<%= sortBy === 'kelancaran' && order === 'asc' ? 'desc' : 'asc' %><%= search ? '&search='+search : '' %>" class="text-white text-decoration-none">Kelancaran <i class="fas fa-sort"></i></a></th>
+                        <th><a href="?sort=makhraj&order=<%= sortBy === 'makhraj' && order === 'asc' ? 'desc' : 'asc' %><%= search ? '&search='+search : '' %>" class="text-white text-decoration-none">Makhraj <i class="fas fa-sort"></i></a></th>
+                        <th><a href="?sort=setoran_tgl&order=<%= sortBy === 'setoran_tgl' && order === 'asc' ? 'desc' : 'asc' %><%= search ? '&search='+search : '' %>" class="text-white text-decoration-none">Tanggal Setor <i class="fas fa-sort"></i></a></th>
+                        <th>Halaqoh</th>
+                        <th>Pembimbing</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% santri.forEach(s => { %>
+                    <tr>
+                        <td><%= s.nama %></td>
+                        <td><%= s.kelas || '-' %></td>
+                        <td><%= s.juz %></td>
+                        <td><%= s.surat %></td>
+                        <td><%= s.ayat %></td>
+                        <td><%= s.baris %></td>
+                        <td><%= s.tajwid %></td>
+                        <td><%= s.kelancaran %></td>
+                        <td><%= s.makhraj %></td>
+                        <td><%= s.setoran_tgl ? new Date(s.setoran_tgl).toLocaleDateString('id-ID') : '-' %></td>
+                        <td><%= s.halaqoh || '-' %></td>
+                        <td><%= s.pembimbing || '-' %></td>
+                        <td class="actions">
+                            <td class="actions">
+    <a href="/santri/edit/<%= s.id %>" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Edit</a>
+    <% if (user.role === 'admin') { %>
+        <a href="/santri/delete/<%= s.id %>" class="btn btn-sm btn-danger" onclick="return confirm('Hapus data ini?')"><i class="fas fa-trash"></i> Hapus</a>
+    <% } else if (user.role === 'guru_tahfizh') { %>
+        <a href="/santri/request-delete/<%= s.id %>" class="btn btn-sm btn-warning"><i class="fas fa-question-circle"></i> Request Hapus</a>
+    <% } %>
+</td>
+                        </td>
+                    </tr>
+                    <% }) %>
+                    <% if (santri.length === 0) { %>
+                    <tr><td colspan="13" class="text-center">Tidak ada data santri</td></tr>
+                    <% } %>
+                </tbody>
+            </table>
+            
+        </div>
+
+        <!-- Pagination -->
+        <!-- Pagination -->
+<% if (totalPages > 1) { %>
+<nav>
+    <ul class="pagination justify-content-center">
+        <% if (currentPage > 1) { %>
+        <li class="page-item"><a class="page-link" href="?page=<%= currentPage-1 %><%= search ? '&search='+search : '' %>&sort=<%= sortBy %>&order=<%= order %>&limit=<%= limit %>">Previous</a></li>
+        <% } %>
+        <% for (let i=1; i<=totalPages; i++) { %>
+        <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+            <a class="page-link" href="?page=<%= i %><%= search ? '&search='+search : '' %>&sort=<%= sortBy %>&order=<%= order %>&limit=<%= limit %>"><%= i %></a>
+        </li>
+        <% } %>
+        <% if (currentPage < totalPages) { %>
+        <li class="page-item"><a class="page-link" href="?page=<%= currentPage+1 %><%= search ? '&search='+search : '' %>&sort=<%= sortBy %>&order=<%= order %>&limit=<%= limit %>">Next</a></li>
+        <% } %>
+    </ul>
+</nav>
+<% } %>
+
+<!-- Dropdown Limit -->
+<div class="row mt-3">
+    <div class="col text-center">
+        <label class="me-2">Tampilkan data:</label>
+        <select id="limitSelect" class="form-select d-inline-block w-auto">
+            <option value="10" <%= limit == 10 ? 'selected' : '' %>>10</option>
+            <option value="25" <%= limit == 25 ? 'selected' : '' %>>25</option>
+            <option value="50" <%= limit == 50 ? 'selected' : '' %>>50</option>
+            <option value="100" <%= limit == 100 ? 'selected' : '' %>>100</option>
+        </select>
+    </div>
+</div>
+      <!-- Modal Tambah/Edit Santri -->
+<div class="modal fade" id="santriModal" tabindex="-1" aria-labelledby="santriModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="santriModalLabel"><i class="fas fa-user-graduate"></i> Form Santri</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="santriForm" method="POST" action="">
+                    <input type="hidden" name="_method" id="formMethod" value="POST">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Tanggal Setor <span class="text-danger">*</span></label>
+                            <input type="date" name="setoran_tgl" id="setoran_tgl" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Nama Santri <span class="text-danger">*</span></label>
+                            <input type="text" name="nama" id="nama" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Kelas</label>
+                            <input type="text" name="kelas" id="kelas" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Juz <span class="text-danger">*</span></label>
+                            <input type="number" name="juz" id="juz" class="form-control" min="1" max="30" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Surat <span class="text-danger">*</span></label>
+                            <select name="surat" id="surat" class="form-select" required>
+                                <option value="">-- Pilih Surat --</option>
+                                <!-- Akan diisi via JS -->
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Ayat <span class="text-danger">*</span></label>
+                            <input type="number" name="ayat" id="ayat" class="form-control" min="1" required>
+                            <div id="verseInfoModal" class="form-text text-muted"></div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Baris <span class="text-danger">*</span></label>
+                            <input type="number" name="baris" id="baris" class="form-control" min="1" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Halaqoh</label>
+                            <input type="text" name="halaqoh" id="halaqoh" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Pembimbing</label>
+                            <input type="text" name="pembimbing" id="pembimbing" class="form-control">
+                        </div>
+                        <div class="col-md-6"></div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Tajwid (0-100)</label>
+                            <input type="number" name="tajwid" id="tajwid" class="form-control" min="0" max="100" step="1" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Kelancaran (0-100)</label>
+                            <input type="number" name="kelancaran" id="kelancaran" class="form-control" min="0" max="100" step="1" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Makhraj (0-100)</label>
+                            <input type="number" name="makhraj" id="makhraj" class="form-control" min="0" max="100" step="1" required>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

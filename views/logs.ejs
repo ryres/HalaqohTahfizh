@@ -1,0 +1,75 @@
+<% title = 'Log Aktivitas' %>
+<%- include('partials/header') %>
+
+<div class="card">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h4 class="mb-0"><i class="fas fa-history"></i> Log Aktivitas</h4>
+        <select id="limitSelect" class="form-select w-auto">
+            <option value="20" <%= limit == 20 ? 'selected' : '' %>>20</option>
+            <option value="50" <%= limit == 50 ? 'selected' : '' %>>50</option>
+            <option value="100" <%= limit == 100 ? 'selected' : '' %>>100</option>
+        </select>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>User ID</th>
+                        <th>Username</th>
+                        <th>Aksi</th>
+                        <th>Detail</th>
+                        <th>IP Address</th>
+                        <th>Waktu</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% logs.forEach(log => { %>
+                    <tr>
+                        <td><%= log.id %></td>
+                        <td><%= log.user_id || '-' %></td>
+                        <td><%= log.username %></td>
+                        <td><%= log.action %></td>
+                        <td><%= log.details || '-' %></td>
+                        <td><%= log.ip_address || '-' %></td>
+                        <td><%= new Date(log.created_at).toLocaleString('id-ID') %></td>
+                    </tr>
+                    <% }) %>
+                    <% if (logs.length === 0) { %>
+                        <tr><td colspan="7" class="text-center">Belum ada aktivitas tercatat</td></tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+        <!-- Pagination -->
+        <% if (totalPages > 1) { %>
+        <nav class="mt-3">
+            <ul class="pagination justify-content-center">
+                <% if (currentPage > 1) { %>
+                <li class="page-item"><a class="page-link" href="?page=<%= currentPage-1 %>&limit=<%= limit %>">Previous</a></li>
+                <% } %>
+                <% for (let i=1; i<=totalPages; i++) { %>
+                <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                    <a class="page-link" href="?page=<%= i %>&limit=<%= limit %>"><%= i %></a>
+                </li>
+                <% } %>
+                <% if (currentPage < totalPages) { %>
+                <li class="page-item"><a class="page-link" href="?page=<%= currentPage+1 %>&limit=<%= limit %>">Next</a></li>
+                <% } %>
+            </ul>
+        </nav>
+        <% } %>
+    </div>
+</div>
+
+<script>
+    document.getElementById('limitSelect').addEventListener('change', function() {
+        const url = new URL(window.location.href);
+        url.searchParams.set('limit', this.value);
+        url.searchParams.set('page', 1);
+        window.location.href = url.toString();
+    });
+</script>
+
+<%- include('partials/footer') %>
