@@ -4,6 +4,7 @@ const session = require('express-session');
 const path = require('path');
 const db = require('./config/db');
 require('dotenv').config();
+const { initDatabase } = require('./database/init');
 const { verifyToken, isAdmin } = require('./middleware/auth');
 const halaqohRoutes = require('./routes/halaqohRoutes');
 const guruRoutes = require('./routes/guruRoutes');
@@ -160,4 +161,15 @@ cron.schedule('0 * * * *', async () => {
     } catch (err) { console.error('Cron error:', err); }
 });
 
-app.listen(PORT, () => console.log(`🚀 Server: http://localhost:${PORT}`));
+// ── Startup ──────────────────────────────────────────────────────────────────
+// Initialize the database schema before accepting any requests or running crons.
+(async () => {
+    try {
+        await initDatabase();
+    } catch (err) {
+        console.error('❌ Database initialization failed. Server will not start.', err);
+        process.exit(1);
+    }
+
+    app.listen(PORT, () => console.log(`🚀 Server: http://localhost:${PORT}`));
+})();
