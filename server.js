@@ -82,39 +82,40 @@ app.get('/', (req, res) => res.redirect('/login'));
 // API dashboard summary (tetap ada)
 app.get('/api/dashboard-summary', verifyToken, async (req, res) => {
     try {
-        const [totalSantri] = await db.query('SELECT COUNT(*) as total FROM santri');
-        const [setoranBulan] = await db.query(`
-            SELECT COUNT(*) as total FROM santri 
-            WHERE MONTH(setoran_tgl) = MONTH(CURDATE()) AND YEAR(setoran_tgl) = YEAR(CURDATE())
-        `);
-        const [avgJuz] = await db.query('SELECT AVG(juz_akhir) as avg FROM (SELECT MAX(juz) as juz_akhir FROM santri GROUP BY id) as a');
-        const [mumtaz] = await db.query(`
-            SELECT COUNT(*) as total FROM (
-                SELECT id, (tajwid+kelancaran+makhraj)/3 as avg_nilai FROM santri
-            ) as t WHERE avg_nilai > 80
-        `);
-        const total = totalSantri[0].total || 1;
-        const persenMumtaz = ((mumtaz[0].total / total) * 100).toFixed(1);
-        const [distJuz] = await db.query(`
-            SELECT juz, COUNT(*) as total FROM (SELECT MAX(juz) as juz FROM santri GROUP BY id) as a GROUP BY juz ORDER BY juz
-        `);
-        const [statusCount] = await db.query(`
-            SELECT 
+        const promises = [
+            db.query('SELECT COUNT(*) as total FROM santri'),
+            db.query(`SELECT COUNT(*) as total FROM santri WHERE MONTH(setoran_tgl) = MONTH(CURDATE()) AND YEAR(setoran_tgl) = YEAR(CURDATE())`),
+            db.query('SELECT AVG(juz_akhir) as avg FROM (SELECT MAX(juz) as juz_akhir FROM santri GROUP BY id) as a'),
+            db.query(`SELECT COUNT(*) as total FROM (SELECT id, (tajwid+kelancaran+makhraj)/3 as avg_nilai FROM santri) as t WHERE avg_nilai > 80`),
+            db.query(`SELECT juz, COUNT(*) as total FROM (SELECT MAX(juz) as juz FROM santri GROUP BY id) as a GROUP BY juz ORDER BY juz`),
+            db.query(`SELECT 
                 SUM(CASE WHEN (tajwid+kelancaran+makhraj)/3 > 80 THEN 1 ELSE 0 END) as mumtaz,
                 SUM(CASE WHEN (tajwid+kelancaran+makhraj)/3 BETWEEN 60 AND 80 THEN 1 ELSE 0 END) as regular,
                 SUM(CASE WHEN (tajwid+kelancaran+makhraj)/3 < 60 THEN 1 ELSE 0 END) as bimbingan
-            FROM santri
-        `);
-        const [topSantri] = await db.query(`
+            FROM santri`)
+        ];
+        promises.push(db.query(`
             SELECT nama, (tajwid+kelancaran+makhraj)/3 as nilai
             FROM santri
             ORDER BY nilai DESC LIMIT 5
-        `);
-        let logs = [];
-        if (req.user.role === 'admin') {
-            const [recentLogs] = await db.query(`SELECT username, action, created_at FROM logs ORDER BY created_at DESC LIMIT 5`);
-            logs = recentLogs;
+        `));
+        if (req.user && req.user.role === 'admin') {
+            promises.push(db.query(`SELECT username, action, created_at FROM logs ORDER BY created_at DESC LIMIT 5`));
         }
+
+        const results = await Promise.all(promises);
+        const totalSantri = results[0][0];
+        const setoranBulan = results[1][0];
+        const avgJuz = results[2][0];
+        const mumtaz = results[3][0];
+        const distJuz = results[4][0];
+        const statusCount = results[5][0];
+        const topSantri = results[6][0];
+        let logs = [];
+        if (req.user && req.user.role === 'admin') logs = results[7][0];
+
+        const total = totalSantri[0].total || 1;
+        const persenMumtaz = ((mumtaz[0].total / total) * 100).toFixed(1);
         res.json({
             totalSantri: totalSantri[0].total,
             setoranBulan: setoranBulan[0].total,
@@ -152,10 +153,11 @@ cron.schedule('0 * * * *', async () => {
             SELECT dr.santri_id FROM delete_requests dr
             WHERE dr.status = 'approved' AND dr.approved_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)
         `);
-        for (let row of rows) {
-            await db.query('DELETE FROM santri WHERE id = ?', [row.santri_id]);
-            await db.query('UPDATE delete_requests SET status = "deleted" WHERE santri_id = ? AND status = "approved"', [row.santri_id]);
-            console.log(`Santri ID ${row.santri_id} dihapus otomatis.`);
+        const ids = rows.map(r => r.santri_id).filter(Boolean);
+        if (ids.length > 0) {
+            await db.query('DELETE FROM santri WHERE id IN (?)', [ids]);
+            await db.query('UPDATE delete_requests SET status = "deleted" WHERE santri_id IN (?) AND status = "approved"', [ids]);
+            ids.forEach(id => console.log(`Santri ID ${id} dihapus otomatis.`));
         }
     } catch (err) { console.error('Cron error:', err); }
 });
