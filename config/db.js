@@ -12,6 +12,8 @@ const pool = mysql.createPool({
     queueLimit: 0,
     enableKeepAlive: true,
     keepAliveInitialDelay: 0
+    connectTimeout: 10000,   // 10 detik
+    acquireTimeout: 10000
 });
 
 const db = pool.promise();
