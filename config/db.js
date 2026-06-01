@@ -6,24 +6,22 @@ const pool = mysql.createPool({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
+    port: process.env.DB_PORT || 3306,
     waitForConnections: true,
-    connectionLimit: 20,            // Tingkatkan sesuai kebutuhan (default 10)
-    queueLimit: 0,                  // 0 = unlimited antrian
-    enableKeepAlive: true,          // Kirim keep-alive packet
-    keepAliveInitialDelay: 0,       // Mulai keep-alive segera
-    idleTimeout: 60000,             // Tutup koneksi idle setelah 60 detik
-    // (Opsional) Untuk koneksi SSL jika perlu:
-    // ssl: { rejectUnauthorized: false }
+    connectionLimit: 10,
+    queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0
 });
 
-const db = pool.promise(); // Gunakan promise wrapper
+const db = pool.promise();
 
-// Test koneksi (sebaiknya dilakukan sekali saat startup)
+// Test koneksi
 (async () => {
     try {
-        const connection = await db.getConnection();
-        console.log('✅ MySQL pool berhasil terkoneksi');
-        connection.release(); // Kembalikan ke pool
+        const conn = await db.getConnection();
+        console.log('✅ MySQL terhubung');
+        conn.release();
     } catch (err) {
         console.error('❌ Gagal koneksi MySQL pool:', err.message);
     }
