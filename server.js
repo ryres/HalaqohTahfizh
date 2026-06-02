@@ -4,6 +4,7 @@ const session = require('express-session');
 const path = require('path');
 const db = require('./config/db');
 require('dotenv').config();
+const helmet = require('helmet');
 const { verifyToken, isAdmin } = require('./middleware/auth');
 const guruRoutes = require('./routes/guruRoutes');
 
@@ -12,6 +13,9 @@ const PORT = process.env.PORT || 3000;
 const compression = require('compression');
 app.use(compression());
 app.set('trust proxy', 1);
+app.use(helmet({
+    contentSecurityPolicy: false
+}));
 
 const jwtSecret = process.env.JWT_SECRET;
 if (!jwtSecret || jwtSecret.length < 32 || jwtSecret === 'kmeanstahfizh') {
@@ -40,6 +44,34 @@ app.use(session({
         secure: process.env.NODE_ENV === 'production'
     }
 }));
+
+// Mitigasi CSRF sederhana berbasis Origin/Referer untuk request state-changing.
+app.use((req, res, next) => {
+    const protectedMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+    if (!protectedMethods.includes(req.method)) return next();
+
+    const hasSession = Boolean(req.cookies.sid || req.cookies.token);
+    if (!hasSession) return next();
+
+    const origin = req.get('origin');
+    const referer = req.get('referer');
+    const host = req.get('x-forwarded-host') || req.get('host');
+
+    const isTrusted = (value) => {
+        if (!value || !host) return false;
+        try {
+            const parsed = new URL(value);
+            return parsed.host === host;
+        } catch (_) {
+            return false;
+        }
+    };
+
+    if (origin && isTrusted(origin)) return next();
+    if (referer && isTrusted(referer)) return next();
+
+    return res.status(403).send('Permintaan ditolak (CSRF protection).');
+});
 
 app.use((req, res, next) => {
     res.locals.success = req.session.success;
