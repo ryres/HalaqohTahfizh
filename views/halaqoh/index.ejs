@@ -28,19 +28,21 @@
                         <tr>
                             <td><%= h.id %></td>
                             <td><%= h.nama_halaqoh %></td>
-                            <td><%= h.nama_guru || '-' %>   <!-- nama_guru dari hasil JOIN di route -->
+                            <td><%= h.nama_guru || '-' %></td>
                             <td><%= h.jadwal || '-' %></td>
                             <td><%= h.ruangan || '-' %></td>
                             <td><%= h.jumlah_santri || 0 %></td>
                             <td>
                                 <a href="/halaqoh/detail/<%= h.id %>" class="btn btn-sm btn-info">Detail</a>
                                 <a href="/halaqoh/edit/<%= h.id %>" class="btn btn-sm btn-warning">Edit</a>
-                                <a href="/halaqoh/delete/<%= h.id %>" class="btn btn-sm btn-danger" onclick="return confirm('Hapus?')">Hapus</a>
+                                <form action="/halaqoh/delete/<%= h.id %>" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Hapus?')">Hapus</button>
+                                </form>
                             </td>
                         </tr>
                         <% }) %>
                     <% } else { %>
-                        <tr><td colspan="7" class="text-center">Belum ada data halaqoh</td><tr>
+                        <tr><td colspan="7" class="text-center">Belum ada data halaqoh</td></tr>
                     <% } %>
                 </tbody>
             </table>

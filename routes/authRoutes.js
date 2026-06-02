@@ -30,8 +30,16 @@ router.post('/login', async (req, res) => {
         if (!match) {
             return res.render('login', { error: 'Username atau password salah' });
         }
+        if (!JWT_SECRET) {
+            return res.render('login', { error: 'Server belum dikonfigurasi dengan benar' });
+        }
         const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
-        res.cookie('token', token, { httpOnly: true });
+        res.cookie('token', token, {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 24 * 60 * 60 * 1000
+        });
         req.session.success = `Selamat datang, ${user.username}`;
         await logActivity(user.id, user.username, 'LOGIN', null, req);
         if (user.role === 'admin' || user.role === 'guru_tahfizh') {
@@ -136,7 +144,6 @@ function getPeriodCategory(days) {
 }
 router.get('/data-santri/target-hafalan', verifyToken, isAdmin, async (req, res) => {
     try {
-        try { await db.query(`ALTER TABLE santri ADD COLUMN target_juz INT DEFAULT 30`); } catch (e) {}
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
         const search = req.query.search || '';
@@ -339,12 +346,17 @@ router.post('/change-password', verifyToken, async (req, res) => {
     res.redirect('/login');
 });
 
-router.get('/logout', async (req, res) => {
-    if (req.user) {
-        await logActivity(req.user.id, req.user.username, 'LOGOUT', null, req);
-    }
-    res.clearCookie('token');
-    res.redirect('/login');
+router.get('/logout', verifyToken, async (req, res) => {
+    await logActivity(req.user.id, req.user.username, 'LOGOUT', null, req);
+    req.session.destroy(() => {
+        res.clearCookie('sid');
+        res.clearCookie('token', {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production'
+        });
+        res.redirect('/login');
+    });
 });
 
 // ==================== MANAJEMEN HALAQOH ====================
@@ -448,7 +460,7 @@ router.post('/halaqoh/edit/:id', verifyToken, isAdmin, async (req, res) => {
     }
 });
 
-router.get('/halaqoh/delete/:id', verifyToken, isAdmin, async (req, res) => {
+router.post('/halaqoh/delete/:id', verifyToken, isAdmin, async (req, res) => {
     const id = req.params.id;
     try {
         const [santri] = await db.query('SELECT COUNT(*) as total FROM santri WHERE halaqoh_id = ?', [id]);

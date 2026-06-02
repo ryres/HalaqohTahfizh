@@ -24,7 +24,9 @@
                             <td><%= g.unit || '-' %></td>
                             <td>
                                 <a href="/guru/edit/<%= g.id %>" class="btn btn-sm btn-warning">Edit</a>
-                                <a href="/guru/delete/<%= g.id %>" class="btn btn-sm btn-danger" onclick="return confirm('Hapus guru ini?')">Hapus</a>
+                                <form action="/guru/delete/<%= g.id %>" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Hapus guru ini?')">Hapus</button>
+                                </form>
                             </td>
                         </tr>
                         <% }) %>

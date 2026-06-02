@@ -5,13 +5,21 @@ const path = require('path');
 const db = require('./config/db');
 require('dotenv').config();
 const { verifyToken, isAdmin } = require('./middleware/auth');
-const halaqohRoutes = require('./routes/halaqohRoutes');
 const guruRoutes = require('./routes/guruRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const compression = require('compression');
 app.use(compression());
+app.set('trust proxy', 1);
+
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret || jwtSecret.length < 32 || jwtSecret === 'kmeanstahfizh') {
+    console.error('❌ JWT_SECRET tidak aman. Gunakan secret minimal 32 karakter.');
+    if (process.env.NODE_ENV === 'production') {
+        process.exit(1);
+    }
+}
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -21,10 +29,16 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(session({
-    secret: process.env.JWT_SECRET || 'kmeanstahfizh',
+    secret: jwtSecret || 'development-only-insecure-secret-change-me',
     resave: false,
-    saveUninitialized: true,
-    cookie: { maxAge: 60000 }
+    saveUninitialized: false,
+    name: 'sid',
+    cookie: {
+        maxAge: 14400000,
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production'
+    }
 }));
 
 app.use((req, res, next) => {
@@ -74,7 +88,6 @@ app.use((req, res, next) => {
 app.use('/', require('./routes/authRoutes'));
 app.use('/santri', require('./routes/santriRoutes'));
 app.use('/tahfizh', require('./routes/tahfizhRoutes'));
-app.use('/', halaqohRoutes);
 app.use('/guru', guruRoutes);
 
 app.get('/', (req, res) => res.redirect('/login'));

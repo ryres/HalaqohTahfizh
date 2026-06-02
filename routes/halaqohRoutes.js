@@ -83,7 +83,7 @@ router.post('/edit/:id', verifyToken, isAdmin, async (req, res) => {
 });
 
 // Hapus
-router.get('/delete/:id', verifyToken, isAdmin, async (req, res) => {
+router.post('/delete/:id', verifyToken, isAdmin, async (req, res) => {
     const id = req.params.id;
     const [santri] = await db.query('SELECT COUNT(*) as total FROM santri WHERE halaqoh_id = ?', [id]);
     if (santri[0].total > 0) {

@@ -150,7 +150,6 @@ router.post('/add', verifyToken, async (req, res) => {
             halaqohList: await getHalaqohList()
         });
     }
-    await notifyAdmins('Santri Baru Ditambahkan', `Santri ${cleanNama} (juz ${juz}) ditambahkan oleh ${req.user.username}.`, 'success', '/data-santri');
     if (!isValidNilai(tajwid) || !isValidNilai(kelancaran) || !isValidNilai(makhraj)) {
         return res.render('santri_form', {
             santri: req.body,
@@ -226,6 +225,7 @@ router.post('/add', verifyToken, async (req, res) => {
             ]
             );
 
+        await notifyAdmins('Santri Baru Ditambahkan', `Santri ${cleanNama} (juz ${juz}) ditambahkan oleh ${req.user.username}.`, 'success', '/data-santri');
         await sendNotification('Santri Baru Ditambahkan', `Santri ${cleanNama} (juz ${juz}) ditambahkan oleh ${req.user.username}.`);
         await logActivity(req.user.id, req.user.username, 'TAMBAH_SANTRI', `Santri: ${cleanNama}, Juz: ${juz}, Target: ${cleanTargetJuz}`, req);
         req.session.success = 'Data santri berhasil ditambahkan!';
@@ -427,7 +427,7 @@ router.post('/edit/:id', verifyToken, async (req, res) => {
 
 // ===================== HAPUS SANTRI =====================
 // Hapus route /delete yang lama, ganti dengan:
-router.get('/delete/:id', verifyToken, async (req, res) => {
+router.post('/delete/:id', verifyToken, async (req, res) => {
     const id = req.params.id;
     // Hanya admin yang bisa langsung hapus
     if (req.user.role === 'admin') {
@@ -463,13 +463,12 @@ router.post('/request-delete/:id', verifyToken, async (req, res) => {
         const [rows] = await db.query('SELECT * FROM santri WHERE id = ?', [id]);
         return res.render('santri_request_delete', { user: req.user, santri: rows[0], error: 'Alasan wajib diisi' });
     }
-    await db.query('INSERT INTO delete_requests (santri_id, requested_by, reason) VALUES (?, ?, ?)', [id, req.user.id, reason]);
+    await db.query('INSERT INTO delete_requests (santri_id, requested_by, reason) VALUES (?, ?, ?)', [id, req.user.id, reason.trim()]);
+    const [santriRows] = await db.query('SELECT nama FROM santri WHERE id = ?', [id]);
+    const santriNama = santriRows[0]?.nama || 'Unknown';
+    await notifyAdmins('Permintaan Hapus Santri', `Guru ${req.user.username} meminta hapus santri "${santriNama}". Alasan: ${reason.trim()}`, 'warning', '/admin/delete-requests');
     req.session.success = 'Permintaan hapus telah dikirim ke koordinator.';
-    res.redirect('/data-santri');
-    // Ambil nama santri untuk keperluan notifikasi
-const [santriRows] = await db.query('SELECT nama FROM santri WHERE id = ?', [id]);
-const santriNama = santriRows[0]?.nama || 'Unknown';
-await notifyAdmins('Permintaan Hapus Santri', `Guru ${req.user.username} meminta hapus santri "${santriNama}". Alasan: ${reason}`, 'warning', '/admin/delete-requests');
+    return res.redirect('/data-santri');
 });
 // ===================== EXPORT EXCEL =====================
 router.get('/export', verifyToken, async (req, res) => {

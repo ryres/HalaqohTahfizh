@@ -61,7 +61,7 @@ router.post('/edit/:id', verifyToken, isAdmin, async (req, res) => {
 });
 
 // Hapus guru
-router.get('/delete/:id', verifyToken, isAdmin, async (req, res) => {
+router.post('/delete/:id', verifyToken, isAdmin, async (req, res) => {
     const id = req.params.id;
     // Cek apakah guru dipakai di halaqoh
     const [halaqoh] = await db.query('SELECT COUNT(*) as total FROM halaqoh WHERE guru_id = ?', [id]);

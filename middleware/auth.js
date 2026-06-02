@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'kmeanstahfizh';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 function verifyToken(req, res, next) {
+    if (!JWT_SECRET) return res.status(500).send('Server auth belum dikonfigurasi');
     const token = req.cookies.token;
     if (!token) return res.redirect('/login');
     try {

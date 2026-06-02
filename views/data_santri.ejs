@@ -75,14 +75,14 @@
                         <td><%= s.halaqoh || '-' %></td>
                         <td><%= s.pembimbing || '-' %></td>
                         <td class="actions">
-                            <td class="actions">
-    <a href="/santri/edit/<%= s.id %>" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Edit</a>
-    <% if (user.role === 'admin') { %>
-        <a href="/santri/delete/<%= s.id %>" class="btn btn-sm btn-danger" onclick="return confirm('Hapus data ini?')"><i class="fas fa-trash"></i> Hapus</a>
-    <% } else if (user.role === 'guru_tahfizh') { %>
-        <a href="/santri/request-delete/<%= s.id %>" class="btn btn-sm btn-warning"><i class="fas fa-question-circle"></i> Request Hapus</a>
-    <% } %>
-</td>
+                            <a href="/santri/edit/<%= s.id %>" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Edit</a>
+                            <% if (user.role === 'admin') { %>
+                                <form action="/santri/delete/<%= s.id %>" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Hapus data ini?')"><i class="fas fa-trash"></i> Hapus</button>
+                                </form>
+                            <% } else if (user.role === 'guru_tahfizh') { %>
+                                <a href="/santri/request-delete/<%= s.id %>" class="btn btn-sm btn-warning"><i class="fas fa-question-circle"></i> Request Hapus</a>
+                            <% } %>
                         </td>
                     </tr>
                     <% }) %>
